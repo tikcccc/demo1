@@ -20,6 +20,31 @@ const viewMeta = {
     title: "Safety Management",
     subtitle: "Inspections, incidents, training, and access control.",
   },
+  qs: {
+    eyebrow: "QS",
+    title: "QS Management",
+    subtitle: "Payment certification, contracts, and cost review control.",
+  },
+  procurement: {
+    eyebrow: "Procurement",
+    title: "Procurement Control",
+    subtitle: "Requisition to PO with vendor and delivery tracking.",
+  },
+  hr: {
+    eyebrow: "HR",
+    title: "Human Resources",
+    subtitle: "People, attendance, training, and compliance records.",
+  },
+  plant: {
+    eyebrow: "Plant",
+    title: "Plant & Machinery",
+    subtitle: "Fleet status, maintenance jobs, and logistics tracking.",
+  },
+  ims: {
+    eyebrow: "IMS",
+    title: "IMS Management",
+    subtitle: "Quality complaints, permits, and environmental inspections.",
+  },
 };
 
 export default function Topbar({ activeView = "home" }) {

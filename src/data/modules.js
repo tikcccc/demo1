@@ -75,6 +75,7 @@ export const sidebarModules = [
   "Material Summary",
   "Procurement",
   "Safety (4S)",
+  "IMS",
   "Plant",
   "QS",
   "Attendance",

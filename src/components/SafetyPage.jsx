@@ -1,4 +1,3 @@
-import { useState } from "react";
 import {
   overviewCards,
   trainingAlerts,
@@ -7,54 +6,382 @@ import {
   inspectionForms,
 } from "../data/safety.js";
 
-const tabs = [
-  { id: "overview", label: "Overview" },
-  { id: "registry", label: "Worker Registry and Access" },
-  { id: "incidents", label: "Incident Reporting" },
-  { id: "forms", label: "E-Forms and Inspection" },
+const commandTags = [
+  { label: "Gate sync", value: "Live", tone: "ok" },
+  { label: "Offline queue", value: "3 pending", tone: "warning" },
+  { label: "CWRA cards", value: "Connected", tone: "info" },
+];
+
+const inspectionQueue = [
+  {
+    id: "PAT-219",
+    title: "Tower crane pre-start checklist",
+    zone: "Zone B",
+    due: "2026-01-29 16:00",
+    status: "In progress",
+  },
+  {
+    id: "PAT-220",
+    title: "Scaffold tag audit",
+    zone: "Zone A",
+    due: "2026-01-29 18:30",
+    status: "Pending",
+  },
+  {
+    id: "PAT-221",
+    title: "Permit to work: Hot work",
+    zone: "Workshop",
+    due: "2026-01-30 09:00",
+    status: "Scheduled",
+  },
+];
+
+const workflowChain = [
+  {
+    role: "Safety Manager",
+    mode: "Parallel approval",
+    status: "Approved",
+    time: "09:20",
+  },
+  {
+    role: "Site Supervisor",
+    mode: "Parallel approval",
+    status: "Pending",
+    time: "Due 15:00",
+  },
+  {
+    role: "Project Director",
+    mode: "Sequential",
+    status: "Next",
+    time: "Auto notify",
+  },
+];
+
+const dataOperations = [
+  { label: "Offline sync", value: "3 forms waiting" },
+  { label: "API status", value: "HR + Payroll connected" },
+  { label: "Exports", value: "PDF / Excel ready" },
 ];
 
 export default function SafetyPage() {
-  const [activeTab, setActiveTab] = useState("overview");
+  const blockedWorkers = workers.filter((worker) => worker.accessStatus === "Denied");
+  const lowScoreWorkers = workers.filter(
+    (worker) => worker.safetyScore < 70 && worker.accessStatus !== "Denied"
+  );
+  const totalSubmissions = inspectionForms.reduce(
+    (total, form) => total + form.submissions,
+    0
+  );
+
+  const metrics = [
+    ...overviewCards,
+    {
+      label: "Gate access blocks",
+      value: `${blockedWorkers.length}`,
+      tone: "alert",
+    },
+    {
+      label: "Active form templates",
+      value: `${inspectionForms.length}`,
+      tone: "info",
+    },
+  ];
+
+  const criticalAlerts = [
+    ...trainingAlerts.map((alert) => ({
+      id: `training-${alert.worker}`,
+      type: "Training",
+      title: alert.course,
+      meta: `${alert.worker} · Expiry ${alert.expiry}`,
+      status: alert.status === "Overdue" ? "critical" : "warning",
+      badge: alert.status,
+    })),
+    ...blockedWorkers.map((worker) => ({
+      id: `access-${worker.id}`,
+      type: "Access",
+      title: `${worker.name} access blocked`,
+      meta: `${worker.location} · Score ${worker.safetyScore}%`,
+      status: "critical",
+      badge: "Access denied",
+    })),
+    ...lowScoreWorkers.map((worker) => ({
+      id: `score-${worker.id}`,
+      type: "Score",
+      title: `${worker.name} safety score review`,
+      meta: `${worker.location} · ${worker.safetyScore}%`,
+      status: "warning",
+      badge: "Review",
+    })),
+  ].slice(0, 5);
+
+  const complianceCard = overviewCards.find(
+    (card) => card.label === "Training Compliance"
+  );
 
   return (
-    <section className="safety">
-      <div className="safety-tabs" role="tablist" aria-label="Safety sections">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            role="tab"
-            aria-selected={activeTab === tab.id}
-            className={`safety-tab ${activeTab === tab.id ? "active" : ""}`}
-            onClick={() => setActiveTab(tab.id)}
-          >
-            {tab.label}
-          </button>
-        ))}
+    <section className="safety safety-command" aria-label="Safety management">
+      <div className="safety-command-bar">
+        <div className="command-main">
+          <p className="eyebrow">Safety mission control</p>
+          <h2>Industrial safety command center</h2>
+          <p className="command-sub">
+            Digitized inspections, incident reporting, training compliance, and
+            access control with audit-ready workflows.
+          </p>
+          <div className="command-tags">
+            {commandTags.map((tag) => (
+              <span key={tag.label} className={`command-tag ${tag.tone}`}>
+                {tag.label}: <strong>{tag.value}</strong>
+              </span>
+            ))}
+          </div>
+        </div>
+        <div className="safety-command-actions">
+          <div className="command-status">
+            <span className="command-status-dot" aria-hidden="true" />
+            <div>
+              <p className="command-status-title">Gate sync live</p>
+              <p className="command-status-meta">
+                Last sync 2 min ago · Offline queue 3
+              </p>
+            </div>
+          </div>
+          <div className="command-actions">
+            <button className="primary-button" type="button">
+              Start inspection
+            </button>
+            <button className="secondary-button" type="button">
+              Report incident
+            </button>
+            <button className="ghost-button" type="button">
+              Create form
+            </button>
+          </div>
+        </div>
       </div>
 
-      {activeTab === "overview" ? (
-        <div className="safety-overview">
-          <div className="overview-cards">
-            {overviewCards.map((card) => (
-              <article key={card.label} className="overview-card">
-                <p className="overview-label">{card.label}</p>
-                <h3 className={`overview-value ${card.tone}`}>{card.value}</h3>
+      <div className="safety-layout">
+        <div className="safety-main">
+          <div className="safety-metrics">
+            {metrics.map((metric) => (
+              <article key={metric.label} className="metric-card">
+                <p className="metric-label">{metric.label}</p>
+                <p className={`metric-value ${metric.tone}`}>{metric.value}</p>
               </article>
             ))}
           </div>
-          <section className="panel">
+
+          <div className="safety-grid">
+            <section className="panel span-7 safety-panel">
+              <div className="panel-header">
+                <div>
+                  <p className="panel-label">Inspection & patrol</p>
+                  <h3>Live checklist queue</h3>
+                  <p className="panel-sub">
+                    Mobile-first checklists with offline mode and geo-tags.
+                  </p>
+                </div>
+                <button className="ghost-button" type="button">
+                  Open mobile
+                </button>
+              </div>
+              <div className="inspection-list">
+                {inspectionQueue.map((item) => (
+                  <div key={item.id} className="inspection-item">
+                    <div className="inspection-meta">
+                      <p className="inspection-title">{item.title}</p>
+                      <p className="inspection-sub">
+                        {item.zone} · Due {item.due}
+                      </p>
+                    </div>
+                    <span
+                      className={`status-tag ${item.status
+                        .toLowerCase()
+                        .replace(/\s/g, "-")}`}
+                    >
+                      {item.status}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <section className="panel span-5 safety-panel">
+              <div className="panel-header">
+                <div>
+                  <p className="panel-label">Incident reporting</p>
+                  <h3>2-stage pipeline to RCA</h3>
+                  <p className="panel-sub">
+                    Preliminary reports auto-escalate to investigation.
+                  </p>
+                </div>
+                <button className="ghost-button" type="button">
+                  View log
+                </button>
+              </div>
+              <div className="incident-stream">
+                {incidents.map((incident) => (
+                  <article key={incident.ref} className="incident-row">
+                    <div className="incident-meta">
+                      <span className="mono">{incident.ref}</span>
+                      <span>{incident.date}</span>
+                    </div>
+                    <p className="incident-title">{incident.title}</p>
+                    <div className="incident-progress">
+                      <div className="incident-progress-bar">
+                        <span style={{ width: `${incident.stage * 33.33}%` }} />
+                      </div>
+                      <div className="incident-steps">
+                        <span className={incident.stage >= 1 ? "active" : ""}>
+                          Preliminary
+                        </span>
+                        <span className={incident.stage >= 2 ? "active" : ""}>
+                          Investigation
+                        </span>
+                        <span className={incident.stage >= 3 ? "active" : ""}>
+                          Closed
+                        </span>
+                      </div>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </section>
+
+            <section className="panel span-7 safety-panel safety-panel--builder">
+              <div className="builder-header">
+                <div>
+                  <p className="panel-label">No-code form builder</p>
+                  <h3>Drag, drop, deploy</h3>
+                  <p className="panel-sub">
+                    Conditional logic, calculation fields, and template
+                    governance built in.
+                  </p>
+                </div>
+                <div className="builder-actions">
+                  <button className="primary-button" type="button">
+                    Create template
+                  </button>
+                  <button className="ghost-button" type="button">
+                    Template library
+                  </button>
+                </div>
+              </div>
+              <div className="builder-metrics">
+                <div>
+                  <p className="builder-label">Total submissions</p>
+                  <p className="builder-value">{totalSubmissions}</p>
+                </div>
+                <div>
+                  <p className="builder-label">Mobile sync</p>
+                  <p className="builder-value">Offline ready</p>
+                </div>
+              </div>
+              <div className="form-grid">
+                {inspectionForms.map((form) => (
+                  <div key={form.id} className="form-card">
+                    <div>
+                      <p className="form-title">{form.name}</p>
+                      <p className="form-meta">
+                        {form.id} · Updated {form.updated}
+                      </p>
+                    </div>
+                    <div className="form-count">
+                      <strong>{form.submissions}</strong>
+                      <span>Submissions</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <section className="panel span-5 safety-panel">
+              <div className="panel-header">
+                <div>
+                  <p className="panel-label">Worker registry & access</p>
+                  <h3>Register once, work anywhere</h3>
+                  <p className="panel-sub">
+                    OCR verified IDs with real-time gate enforcement.
+                  </p>
+                </div>
+                <button className="ghost-button" type="button">
+                  OCR scan ID
+                </button>
+              </div>
+              <div className="registry-snapshot">
+                {workers.slice(0, 3).map((worker) => (
+                  <div key={worker.id} className="registry-item">
+                    <span className="mono">{worker.id}</span>
+                    <div>
+                      <p className="registry-name">{worker.name}</p>
+                      <p className="registry-meta">
+                        {worker.trade} · {worker.greenCard}
+                      </p>
+                    </div>
+                    <span
+                      className={`pill ${worker.accessStatus.toLowerCase()}`}
+                    >
+                      {worker.accessStatus}
+                    </span>
+                    <div>
+                      <span className="score-bar">
+                        <span style={{ width: `${worker.safetyScore}%` }} />
+                      </span>
+                      <span className="score-note">
+                        Score {worker.safetyScore}%
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="registry-actions">
+                <button className="ghost-button" type="button">
+                  View full registry
+                </button>
+                <button className="secondary-button" type="button">
+                  New worker
+                </button>
+              </div>
+            </section>
+          </div>
+        </div>
+
+        <aside className="safety-rail">
+          <section className="rail-card safety-alert-panel">
             <div className="panel-header">
               <div>
-                <p className="panel-label">E-Training</p>
-                <h3>Training expiry alerts</h3>
+                <p className="panel-label">Critical alerts</p>
+                <h3>Immediate action required</h3>
+              </div>
+              <span className="pill overdue">High risk</span>
+            </div>
+            <div className="alert-list">
+              {criticalAlerts.map((alert) => (
+                <div key={alert.id} className={`alert-item ${alert.status}`}>
+                  <p className="alert-tag">{alert.type}</p>
+                  <p className="alert-title">{alert.title}</p>
+                  <div className="alert-meta">
+                    <span>{alert.meta}</span>
+                    <span className={`alert-pill ${alert.status}`}>
+                      {alert.badge}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className="rail-card safety-training-panel">
+            <div className="panel-header">
+              <div>
+                <p className="panel-label">E-training & CWRA</p>
+                <h3>Compliance {complianceCard?.value || "—"}</h3>
               </div>
               <button className="ghost-button" type="button">
-                Open training dashboard
+                Training hub
               </button>
             </div>
-            <div className="training-alerts">
+            <div className="training-alerts compact">
               {trainingAlerts.map((alert) => (
                 <div key={alert.worker} className="training-alert">
                   <div>
@@ -63,7 +390,11 @@ export default function SafetyPage() {
                   </div>
                   <div className="training-meta">
                     <span>{alert.expiry}</span>
-                    <span className={`pill ${alert.status.toLowerCase().replace(/\s/g, "-")}`}>
+                    <span
+                      className={`pill ${alert.status
+                        .toLowerCase()
+                        .replace(/\s/g, "-")}`}
+                    >
                       {alert.status}
                     </span>
                   </div>
@@ -71,156 +402,61 @@ export default function SafetyPage() {
               ))}
             </div>
           </section>
-        </div>
-      ) : null}
 
-      {activeTab === "registry" ? (
-        <div className="safety-registry">
-          <section className="panel">
-            <div className="panel-header">
-              <div>
-                <p className="panel-label">Unified Worker Registry</p>
-                <h3>Register once, work anywhere</h3>
-              </div>
-              <div className="panel-actions">
-                <button className="ghost-button" type="button">
-                  OCR Scan ID
-                </button>
-                <button className="primary-button" type="button">
-                  New Worker
-                </button>
-              </div>
-            </div>
-            <div className="registry-table">
-              <div className="registry-head">
-                <span>Worker ID</span>
-                <span>Name / Trade</span>
-                <span>Documents (OCR verified)</span>
-                <span>Safety score</span>
-                <span>Access status</span>
-                <span>Location</span>
-              </div>
-              {workers.map((worker) => (
-                <div key={worker.id} className="registry-row">
-                  <span className="mono">{worker.id}</span>
-                  <span>
-                    <strong>{worker.name}</strong>
-                    <span className="registry-trade">{worker.trade}</span>
-                  </span>
-                  <span>
-                    <span className="doc-line">{worker.hkid}</span>
-                    <span className="doc-line">{worker.greenCard}</span>
-                  </span>
-                  <span>
-                    <span className="score-bar">
-                      <span style={{ width: `${worker.safetyScore}%` }} />
-                    </span>
-                    <span className="score-note">KPI: {worker.safetyScore}%</span>
-                  </span>
-                  <span className={`pill ${worker.accessStatus.toLowerCase()}`}>
-                    {worker.accessStatus}
-                  </span>
-                  <span>{worker.location}</span>
-                </div>
-              ))}
-            </div>
-          </section>
-        </div>
-      ) : null}
-
-      {activeTab === "incidents" ? (
-        <div className="safety-incidents">
-          <section className="panel incident-banner">
+          <section className="rail-card safety-workflow-panel">
             <div>
-              <p className="panel-label">Incident Reporting System</p>
-              <h3>2-stage process</h3>
-              <p className="incident-sub">
-                Preliminary report (immediate) to full investigation (RCA).
-              </p>
+              <p className="panel-label">Smart workflows</p>
+              <h3>Permit approval chain</h3>
             </div>
-            <button className="primary-button" type="button">
-              Report new incident
-            </button>
-          </section>
-          <div className="incident-grid">
-            {incidents.map((incident) => (
-              <article key={incident.ref} className="panel incident-card">
-                <div className="incident-card-head">
-                  <span className="incident-ref">{incident.ref}</span>
-                  <span className="incident-date">{incident.date}</span>
-                </div>
-                <h3>{incident.title}</h3>
-                <div className="incident-progress">
-                  <div className="progress-bar">
-                    <span style={{ width: `${incident.stage * 33.33}%` }} />
-                  </div>
-                  <div className="progress-steps">
-                    <span className={incident.stage >= 1 ? "active" : ""}>1. Preliminary</span>
-                    <span className={incident.stage >= 2 ? "active" : ""}>2. Full investigation</span>
-                    <span className={incident.stage >= 3 ? "active" : ""}>3. Closed</span>
-                  </div>
-                </div>
-                <div className="incident-actions">
-                  <button className="ghost-button" type="button">
-                    View report
-                  </button>
-                  {incident.stage >= 2 ? (
-                    <button className="secondary-button" type="button">
-                      Update RCA
-                    </button>
-                  ) : null}
-                </div>
-              </article>
-            ))}
-          </div>
-        </div>
-      ) : null}
-
-      {activeTab === "forms" ? (
-        <div className="safety-forms">
-          <div className="forms-hero">
-            <div className="panel builder-card">
-              <h3>No-code form builder</h3>
-              <p>Create ad-hoc safety checklists without IT support.</p>
-              <button className="primary-button" type="button">
-                Create new template
-              </button>
-            </div>
-            <div className="panel mobile-card">
-              <h3>Mobile inspection</h3>
-              <p>Forms sync to the mobile app for offline use.</p>
-              <span className="pill">Offline mode ready</span>
-            </div>
-          </div>
-          <section className="panel">
-            <div className="panel-header">
-              <div>
-                <p className="panel-label">Active inspection forms</p>
-                <h3>Recent submissions</h3>
-              </div>
-              <button className="ghost-button" type="button">
-                View all forms
-              </button>
-            </div>
-            <div className="forms-list">
-              {inspectionForms.map((form) => (
-                <div key={form.id} className="form-item">
+            <div className="workflow-chain">
+              {workflowChain.map((step) => (
+                <div key={step.role} className="workflow-step">
                   <div>
-                    <p className="form-title">{form.name}</p>
-                    <p className="form-meta">
-                      ID: {form.id} - Last updated {form.updated}
-                    </p>
+                    <p className="workflow-role">{step.role}</p>
+                    <p className="workflow-meta">{step.mode}</p>
                   </div>
-                  <div className="form-count">
-                    <strong>{form.submissions}</strong>
-                    <span>Submissions</span>
+                  <div className="workflow-status">
+                    <span
+                      className={`status-tag ${step.status
+                        .toLowerCase()
+                        .replace(/\s/g, "-")}`}
+                    >
+                      {step.status}
+                    </span>
+                    <span className="workflow-time">{step.time}</span>
                   </div>
                 </div>
               ))}
             </div>
           </section>
-        </div>
-      ) : null}
+
+          <section className="rail-card safety-data-panel">
+            <div>
+              <p className="panel-label">Data & integrations</p>
+              <h3>Audit-ready exports</h3>
+            </div>
+            <div className="data-list">
+              {dataOperations.map((item) => (
+                <div key={item.label} className="data-item">
+                  <span>{item.label}</span>
+                  <strong>{item.value}</strong>
+                </div>
+              ))}
+            </div>
+            <div className="data-actions">
+              <button className="ghost-button" type="button">
+                Export PDF
+              </button>
+              <button className="ghost-button" type="button">
+                Export Excel
+              </button>
+              <button className="secondary-button" type="button">
+                Open API
+              </button>
+            </div>
+          </section>
+        </aside>
+      </div>
     </section>
   );
 }

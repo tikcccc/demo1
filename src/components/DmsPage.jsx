@@ -1,5 +1,4 @@
 import {
-  dmsLibraries,
   dmsPhases,
   dmsCategories,
   dmsDocuments,
@@ -83,56 +82,7 @@ export default function DmsPage() {
 
       <div className="dms-browser-layout">
         <aside className="dms-side">
-          <div className="dms-panel dms-panel--accent">
-            <p className="panel-label">Library</p>
-            <label className="library-select">
-              <span>Workspace</span>
-              <select defaultValue={dmsLibraries[0].id} aria-label="Library">
-                {dmsLibraries.map((library) => (
-                  <option key={library.id} value={library.id}>
-                    {library.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <div className="dms-filter-stack">
-              <label className="filter">
-                <span>Phase</span>
-                <select defaultValue="All">
-                  <option value="All">All phases</option>
-                  {dmsPhases.map((phase) => (
-                    <option key={phase.name} value={phase.name}>
-                      {phase.name} ({phase.count})
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="filter">
-                <span>Status</span>
-                <select defaultValue="All">
-                  <option value="All">All status</option>
-                  <option value="Pending">Pending</option>
-                  <option value="Review">In review</option>
-                  <option value="Approved">Approved</option>
-                  <option value="External">External</option>
-                  <option value="Archive">Archive</option>
-                </select>
-              </label>
-            </div>
-            <div>
-              <p className="panel-label">Smart filters</p>
-              <div className="dms-smart-filters">
-                {quickFilters.map((filter) => (
-                  <button key={filter.label} className="smart-filter" type="button">
-                    <span>{filter.label}</span>
-                    <strong>{filter.count}</strong>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <div className="dms-panel">
+          <div className="dms-panel dms-panel--folders">
             <p className="panel-label">Folder tree</p>
             <div className="folder-tree">
               {dmsCategories.map((category) => (

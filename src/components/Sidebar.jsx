@@ -65,7 +65,12 @@ export default function Sidebar({ activeView = "home", onViewChange }) {
               key={item}
               className={`sidebar-link ${
                 (item === "DMS" && activeView === "dms") ||
-                (item === "Safety (4S)" && activeView === "safety")
+                (item === "Safety (4S)" && activeView === "safety") ||
+                (item === "Procurement" && activeView === "procurement") ||
+                (item === "Plant" && activeView === "plant") ||
+                (item === "QS" && activeView === "qs") ||
+                (item === "Attendance" && activeView === "hr") ||
+                (item === "IMS" && activeView === "ims")
                   ? "active"
                   : ""
               }`}
@@ -76,6 +81,21 @@ export default function Sidebar({ activeView = "home", onViewChange }) {
                 }
                 if (item === "Safety (4S)") {
                   onViewChange?.("safety");
+                }
+                if (item === "Procurement") {
+                  onViewChange?.("procurement");
+                }
+                if (item === "Plant") {
+                  onViewChange?.("plant");
+                }
+                if (item === "QS") {
+                  onViewChange?.("qs");
+                }
+                if (item === "Attendance") {
+                  onViewChange?.("hr");
+                }
+                if (item === "IMS") {
+                  onViewChange?.("ims");
                 }
               }}
             >

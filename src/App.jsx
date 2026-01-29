@@ -12,6 +12,11 @@ import RightRail from "./components/RightRail.jsx";
 import DmsPage from "./components/DmsPage.jsx";
 import SafetyPage from "./components/SafetyPage.jsx";
 import WebmailPage from "./components/WebmailPage.jsx";
+import QsPage from "./components/QsPage.jsx";
+import ProcurementPage from "./components/ProcurementPage.jsx";
+import HrPage from "./components/HrPage.jsx";
+import PlantPage from "./components/PlantPage.jsx";
+import ImsPage from "./components/ImsPage.jsx";
 
 export default function App() {
   const [activeView, setActiveView] = useState("home");
@@ -47,6 +52,11 @@ export default function App() {
           {activeView === "webmail" ? <WebmailPage /> : null}
           {activeView === "dms" ? <DmsPage /> : null}
           {activeView === "safety" ? <SafetyPage /> : null}
+          {activeView === "qs" ? <QsPage /> : null}
+          {activeView === "procurement" ? <ProcurementPage /> : null}
+          {activeView === "hr" ? <HrPage /> : null}
+          {activeView === "plant" ? <PlantPage /> : null}
+          {activeView === "ims" ? <ImsPage /> : null}
         </main>
       </div>
     </div>
