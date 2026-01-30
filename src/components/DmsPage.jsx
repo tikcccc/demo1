@@ -1,5 +1,6 @@
+import { useState } from "react";
 import {
-  dmsPhases,
+  dmsLibraries,
   dmsCategories,
   dmsDocuments,
   dmsApprovals,
@@ -7,8 +8,6 @@ import {
   dmsExternalAccess,
   dmsFolderCards,
 } from "../data/dms.js";
-
-const selectedDoc = dmsDocuments[0];
 const quickFilters = [
   { label: "My uploads", count: 28 },
   { label: "Needs review", count: 6 },
@@ -24,22 +23,56 @@ const statusFilters = [
   "Archived",
 ];
 const viewModes = ["List", "Grid"];
-const breadcrumbs = ["Project DMS", selectedDoc.phase, selectedDoc.category];
-const detailMeta = [
-  { label: "Doc ID", value: selectedDoc.id },
-  { label: "Owner", value: selectedDoc.owner },
-  { label: "Phase", value: selectedDoc.phase },
-  { label: "Library", value: `${selectedDoc.library} DMS` },
-  ...dmsMeta,
-  { label: "External Access", value: selectedDoc.externalAccess },
-];
-
 export default function DmsPage() {
+  const [activeLibrary, setActiveLibrary] = useState(
+    dmsLibraries[0]?.id || "project"
+  );
+  const filteredDocuments = dmsDocuments.filter(
+    (doc) => doc.library?.toLowerCase() === activeLibrary
+  );
+  const selectedDoc = filteredDocuments[0] ?? dmsDocuments[0];
+  const activeLibraryLabel =
+    dmsLibraries.find((library) => library.id === activeLibrary)?.label ||
+    "Project DMS";
+  const breadcrumbs = [
+    activeLibraryLabel,
+    selectedDoc?.phase ?? "—",
+    selectedDoc?.category ?? "—",
+  ];
+  const detailMeta = selectedDoc
+    ? [
+        { label: "Doc ID", value: selectedDoc.id },
+        { label: "Owner", value: selectedDoc.owner },
+        { label: "Phase", value: selectedDoc.phase },
+        { label: "Library", value: `${selectedDoc.library} DMS` },
+        ...dmsMeta,
+        { label: "External Access", value: selectedDoc.externalAccess },
+      ]
+    : [];
+
   return (
     <section className="dms dms-browser">
       <div className="dms-command">
         <div>
           <p className="eyebrow">Current location</p>
+          <div
+            className="dms-view-toggle dms-library-toggle"
+            role="tablist"
+            aria-label="DMS libraries"
+          >
+            {dmsLibraries.map((library) => (
+              <button
+                key={library.id}
+                type="button"
+                role="tab"
+                aria-selected={activeLibrary === library.id}
+                className={activeLibrary === library.id ? "active" : ""}
+                onClick={() => setActiveLibrary(library.id)}
+              >
+                {library.label}
+              </button>
+            ))}
+          </div>
           <nav className="breadcrumbs" aria-label="Breadcrumb">
             <ol>
               {breadcrumbs.map((crumb, index) => (
@@ -169,7 +202,7 @@ export default function DmsPage() {
               <span>Size</span>
               <span>Actions</span>
             </div>
-            {dmsDocuments.map((doc) => (
+            {filteredDocuments.map((doc) => (
               <article
                 key={doc.id}
                 className={`dms-file-row ${doc.id === selectedDoc.id ? "active" : ""}`}

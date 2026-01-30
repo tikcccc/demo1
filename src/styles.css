@@ -1969,6 +1969,10 @@ button {
   background: rgba(31, 42, 58, 0.04);
 }
 
+.dms-library-toggle {
+  margin: 0.5rem 0;
+}
+
 .dms-view-toggle button {
   padding: 0.35rem 0.85rem;
   border-radius: 999px;
